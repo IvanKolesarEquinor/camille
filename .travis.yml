@@ -3,6 +3,8 @@ language: python
 python:
   - "3.5"
   - "3.6"
+  - "3.7"
+  - "3.8"
 
 os:
   - linux
@@ -10,12 +12,21 @@ os:
 matrix:
   fast_finish: true
   include:
-  - python: 3.7
+  - name: PyPi wheel test
+    python: 3.6
     dist: xenial
     sudo: true
-  - python: 3.8
-    dist: xenial
-    sudo: true
+    env:
+      - PYPI_BUILD: true
+      - CIBW_BUILD: '''cp36-*'''
+      - CIBW_BEFORE_ALL: '''yum install -y gcc ninja-build'''
+      - CIBW_BEFORE_BUILD: '''pip install cmake setuptools-scm -r requirements.txt && pip install --force-reinstall -r requirements-dev.txt'''
+    install: 
+      - pip3 install cibuildwheel==1.5.5
+    before_script: skip
+    script:
+      - python3 -m cibuildwheel --output-dir dist
+    after_success: skip
 
 install:
   - pip3 install -r requirements.txt
@@ -36,9 +47,8 @@ after_success:
 deploy:
   - provider: pypi
     skip_cleanup: true
-    distributions: sdist bdist_wheel
     on:
-      condition: $TRAVIS_PYTHON_VERSION = 3.6
+      condition: $PYPI_BUILD = true
       tags: true
     user: statoil-travis
     password:
