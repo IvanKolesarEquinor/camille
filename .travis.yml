@@ -18,15 +18,17 @@ matrix:
     sudo: true
     env:
       - PYPI_BUILD: true
-      - CIBW_BUILD: '''cp36-*'''
+      - CIBW_BUILD: '''cp36-manylinux_x86_64'''
       - CIBW_BEFORE_ALL: '''yum install -y gcc ninja-build'''
       - CIBW_BEFORE_BUILD: '''pip install cmake setuptools-scm -r requirements.txt && pip install --force-reinstall -r requirements-dev.txt'''
     install: 
       - pip3 install cibuildwheel==1.5.5
-    before_script: skip
+      - pip3 install -r requirements.txt
+      - pip3 install bandit setuptools-scm
+      - pip3 install coverage codacy-coverage
     script:
+      - pip3 install --force-reinstall -r requirements-dev.txt
       - python3 -m cibuildwheel --output-dir dist
-    after_success: skip
 
 install:
   - pip3 install -r requirements.txt
@@ -45,11 +47,23 @@ after_success:
   - 'if [ ! -z "${CODACY_PROJECT_TOKEN}" ]; then coverage run setup.py test; coverage xml; python-codacy-coverage -r coverage.xml; fi'
 
 deploy:
+#  - provider: pypi
+#    skip_cleanup: true
+#    on:
+#      condition: $PYPI_BUILD = true
+#      repo: equinor/camille
+#      tags: true
+#    user: statoil-travis
+#    password:
+#      secure: jJbW5U0BuXbuTnlsZD7nKRKDGFPkUSVGSnJy0FwZu3CQ2yEk9OUKtPoRS1kaEgVdxoYtCgZemRk1WfkkJqSklitFvrfpKU4WBbdQxUrmHjzaRYxe3dipaP4+CFM7nMG7YNwwScQfn1bocH2AaC/wIcBIoYkZWbJARc5V1NsbvxdEk5dPHaPRLaL4zxjHShfLTBKsUculn9jCwrjj9k35/JycF6hWXzWD+HC4q8oz743Q0oyjkcZu1zYHLns9Ug0lTCDjO4ugFXTcwlyKRXDepSwGy6Y6bwiU9d1/Jj/5TNU1tNkKWHHxjn15O2BWMt/aw97575g08FS+/ewprfRCfYGsXJskr5I5/emRKZ1GODBFkeM/UGzfoOo/9C57J3ULrJcgKsMBIsUabLyXswSpcVEaKTexTqnkEebkJfcwMxL4pz7uU8jHxYvg4gUvrXUrKMzWqwUavwxY4K22dsMtx0U6UlrExpbHvPdn/czDcLL6jyKMkJsfjFHNlNXDBCdI26zT8ldrJqATZpdS9lalnkMo3bw8oDMsuhzyPSbMH1oQ1lMDILllS37CEqN7O05lxYfGYRrbxLfUaxZkA0S/RXZP3KwusnkBHqGVbT/8MZN1woKjze25hKpk1tE9V9ZQIvgPtfC5s7L/T9FqEqlWrZPF2q4e+UydG/lyYThhjHo=
   - provider: pypi
+    server: https://test.pypi.org/legacy/
     skip_cleanup: true
     on:
       condition: $PYPI_BUILD = true
-      tags: true
-    user: statoil-travis
-    password:
-      secure: jJbW5U0BuXbuTnlsZD7nKRKDGFPkUSVGSnJy0FwZu3CQ2yEk9OUKtPoRS1kaEgVdxoYtCgZemRk1WfkkJqSklitFvrfpKU4WBbdQxUrmHjzaRYxe3dipaP4+CFM7nMG7YNwwScQfn1bocH2AaC/wIcBIoYkZWbJARc5V1NsbvxdEk5dPHaPRLaL4zxjHShfLTBKsUculn9jCwrjj9k35/JycF6hWXzWD+HC4q8oz743Q0oyjkcZu1zYHLns9Ug0lTCDjO4ugFXTcwlyKRXDepSwGy6Y6bwiU9d1/Jj/5TNU1tNkKWHHxjn15O2BWMt/aw97575g08FS+/ewprfRCfYGsXJskr5I5/emRKZ1GODBFkeM/UGzfoOo/9C57J3ULrJcgKsMBIsUabLyXswSpcVEaKTexTqnkEebkJfcwMxL4pz7uU8jHxYvg4gUvrXUrKMzWqwUavwxY4K22dsMtx0U6UlrExpbHvPdn/czDcLL6jyKMkJsfjFHNlNXDBCdI26zT8ldrJqATZpdS9lalnkMo3bw8oDMsuhzyPSbMH1oQ1lMDILllS37CEqN7O05lxYfGYRrbxLfUaxZkA0S/RXZP3KwusnkBHqGVbT/8MZN1woKjze25hKpk1tE9V9ZQIvgPtfC5s7L/T9FqEqlWrZPF2q4e+UydG/lyYThhjHo=
+      repo: IvanKolesarEquinor/camille
+      branch: PyPiDeploymentPreparation
+      tags: false
+    user: ikol
+    password: 
+      secure: AzxbYR96XkOblB4oBIytLBXyOsqNFLYwIvAkd9G2YE5f+4n+DgNasXMmbKHvmwZ1aNAzGFAVJMsie9eAswpLVg9Ak4mjykb0C6Gj6tlTRyiLwsj8FkEhIVZP9Mp5L/MKiZ/6hb6zTBcc0GwcvyHP5ckrEew9CYnnzP/tarO2a7bjDkyrnPU71LKLKamnyNHvetfb0V+VG5ljKfOtzEsU2//zg2xJxLfGzhZxlyPs+qmTm0zwOOkPp8A78ldoJrMEb3NOHpbogl7owimVxkacyjnY1rjcV9jwlHCvam29yCUfr/xYFnG9/FLD8pPo9WLIm35Zny3NB0RxYxIxPq2JOuX5pLXRRadPmreQ2QHgNGp3hCR5tF3voCgLzRmc6e1KlkN6oOqGNWkJv6pk21ARUIOsmCWvdYmvAB8wVEUEZ0XHD/1Yw1i84bNkG0pQiVN5G4z07T6t4njUAISnUpI8xHvFKWC/UzGQgKbxZK+8wnExsdyZdU0epLwweR0ec8hAIigkUpbFgooTXDT3QZOazs7rY4ygCrmrHgyD6JkVVUThtAolBldtKGt0f2zGqfP7wye0LcCkTIoUySeOGNWkNzx5NVp3ErCyIHhSAug9arhK+bK5R1DLZUid8dKLkDd5+yIOnOAczVC7i1Clm43znO09E8r8WhUXo+JEsrjnm90=
