@@ -25,18 +25,21 @@ matrix:
     before_script: 'true'
     script: python3 -m cibuildwheel --output-dir dist
     after_success: 'true'
-#  - name: Windows wheel
-#    os: windows
-#    language: shell
-#    env:
-#      - PYPI_BUILD: true
-#      - CIBW_BUILD: '''cp35-win_amd64 cp36-win_amd64 cp37-win_amd64 cp38-win_amd64'''
-#      - CIBW_BEFORE_ALL: '''yum install -y gcc ninja-build'''
-#      - CIBW_BEFORE_BUILD: '''pip install cmake setuptools-scm -r requirements.txt && pip install --force-reinstall -r requirements-dev.txt'''
-#    before_script: 'true'
-#    install: pip3 install cibuildwheel==1.5.5
-#    script: python3 -m cibuildwheel --output-dir dist
-#    after_success: 'true'
+  - name: Windows wheel
+    os: windows
+    language: shell
+    env:
+      - PYPI_BUILD: true
+      - CIBW_BUILD: '''cp35-win_amd64 cp36-win_amd64 cp37-win_amd64 cp38-win_amd64'''
+      - CIBW_BEFORE_BUILD: '''pip3 install cmake setuptools-scm -r requirements.txt && pip3 install --force-reinstall -r requirements-dev.txt'''
+      - PATH: /c/Python36:/c/Python36/Scripts:$PATH
+    before_install:
+      - choco install python --version 3.6.0
+      - python -m pip install --upgrade pip
+    install: pip install cibuildwheel==1.5.5
+    before_script: 'true'
+    script: python -m cibuildwheel --output-dir dist
+    after_success: 'true'
 
 install:
   - pip3 install -r requirements.txt
