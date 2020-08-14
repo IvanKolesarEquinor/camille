@@ -12,14 +12,30 @@ os:
 matrix:
   fast_finish: true
   include:
-  - name: Manylinux wheel
+  - name: Win64 Python 3.5
+    os: windows
+    language: shell
+    env:
+      - PATH: /c/Python36:/c/Python36/Scripts:$PATH
+    before_install:
+      - choco install python --version 3.5.1
+      - python -m pip install --upgrade pip
+    install: 
+      - pip3 install -r requirements.txt
+      - pip3 install --force-reinstall -r requirements-dev.txt
+    before_script: skip
+    script: 
+      - python setup.py build_ext --inplace
+      - python setup.py test --verbose
+    after_success: skip
+  - name: Manylinux wheels
+    if: tag IS present
     python: 3.6
     dist: xenial
     sudo: true
     env:
       - PYPI_BUILD: true
-#      - CIBW_BUILD: '''cp35-manylinux_x86_64 cp36-manylinux_x86_64 cp37-manylinux_x86_64 cp38-manylinux_x86_64'''
-      - CIBW_BUILD: '''cp36-manylinux_x86_64'''
+      - CIBW_BUILD: '''cp35-manylinux_x86_64 cp36-manylinux_x86_64 cp37-manylinux_x86_64 cp38-manylinux_x86_64'''
       - CIBW_BEFORE_ALL: '''yum install -y gcc ninja-build'''
       - CIBW_BEFORE_BUILD: '''pip install cmake setuptools-scm -r requirements.txt && pip install --force-reinstall -r requirements-dev.txt'''
     install: 
@@ -29,13 +45,13 @@ matrix:
     before_script: 'true'
     script: python3 -m cibuildwheel --output-dir dist
     after_success: 'true'
-  - name: Windows wheel
+  - name: Windows wheels
+    if: tag IS present
     os: windows
     language: shell
     env:
       - PYPI_BUILD: true
-#      - CIBW_BUILD: '''cp35-win_amd64 cp36-win_amd64 cp37-win_amd64 cp38-win_amd64'''
-      - CIBW_BUILD: '''cp36-win_amd64'''
+      - CIBW_BUILD: '''cp35-win_amd64 cp36-win_amd64 cp37-win_amd64 cp38-win_amd64'''
       - CIBW_BEFORE_BUILD: '''pip3 install cmake setuptools-scm -r requirements.txt && pip3 install --force-reinstall -r requirements-dev.txt'''
       - PATH: /c/Python36:/c/Python36/Scripts:$PATH
     before_install:
@@ -45,12 +61,12 @@ matrix:
     before_script: 'true'
     script: python -m cibuildwheel --output-dir dist
     after_success: 'true'
-  - name: MacOS wheel
+  - name: MacOS wheels
+    if: tag IS present
     os: osx
     language: shell
     env:
       - PYPI_BUILD: true
-#      - CIBW_BUILD: '''cp35-win_amd64 cp36-win_amd64 cp37-win_amd64 cp38-win_amd64'''
       - CIBW_BUILD: '''cp36-macosx_x86_64'''
       - CIBW_BEFORE_BUILD: '''pip3 install cmake setuptools-scm -r requirements.txt && pip3 install --force-reinstall -r requirements-dev.txt'''
     before_install:
