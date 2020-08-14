@@ -45,6 +45,21 @@ matrix:
     before_script: 'true'
     script: python -m cibuildwheel --output-dir dist
     after_success: 'true'
+  - name: MacOS wheel
+    os: osx
+    language: shell
+    env:
+      - PYPI_BUILD: true
+#      - CIBW_BUILD: '''cp35-win_amd64 cp36-win_amd64 cp37-win_amd64 cp38-win_amd64'''
+      - CIBW_BUILD: '''cp36-macosx_x86_64'''
+      - CIBW_BEFORE_BUILD: '''pip3 install cmake setuptools-scm -r requirements.txt && pip3 install --force-reinstall -r requirements-dev.txt'''
+    before_install:
+      - python3 -m pip install --upgrade pip
+      - python3 --version
+    install: pip3 install twine pathlib setuptools-scm cibuildwheel==1.5.5
+    before_script: 'true'
+    script: python3 -m cibuildwheel --output-dir dist
+    after_success: 'true'
 
 install:
   - pip3 install -r requirements.txt
