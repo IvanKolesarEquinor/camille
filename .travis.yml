@@ -12,17 +12,19 @@ os:
 matrix:
   fast_finish: true
   include:
-  - name: Win64 Python 3.5
+  - name: Win64 Python 3.6
     os: windows
     language: shell
     env:
       - PATH: /c/Python36:/c/Python36/Scripts:$PATH
     before_install:
-      - choco install python --version 3.5.1
+      - export "PATH=/c/Program Files (x86)/Microsoft Visual Studio 14.0/VC/bin/amd64/:$PATH"
+      - choco install python --version 3.6.0
       - python -m pip install --upgrade pip
     install: 
       - pip3 install -r requirements.txt
       - pip3 install --force-reinstall -r requirements-dev.txt
+      - python -V
     before_script: skip
     script: 
       - python setup.py build_ext --inplace
