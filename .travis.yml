@@ -16,8 +16,12 @@ matrix:
     os: osx
     python: 3.5
     language: generic
-    env:
-      - MACOSX_DEPLOYMENT_TARGET=10.9
+  - name: OSX Python 3.6
+    os: osx
+    python: 3.6
+    language: generic
+#    env:
+#      - MACOSX_DEPLOYMENT_TARGET=10.9
 #  - name: Win64 Python 3.6
 #    os: windows
 #    language: shell
