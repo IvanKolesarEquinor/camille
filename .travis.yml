@@ -12,16 +12,12 @@ os:
 matrix:
   fast_finish: true
   include:
-  - name: OSX Python 3.5
-    os: osx
-    python: 3.5
-    language: generic
   - name: OSX Python 3.6
     os: osx
-    python: 3.6
     language: generic
-#    env:
-#      - MACOSX_DEPLOYMENT_TARGET=10.9
+    env:
+      - MACOSX_DEPLOYMENT_TARGET=10.9
+      - PYTHON=3.6
 #  - name: Win64 Python 3.6
 #    os: windows
 #    language: shell
@@ -73,7 +69,7 @@ matrix:
 #    before_script: 'true'
 #    script: python -m cibuildwheel --output-dir dist
 #    after_success: 'true'
-  - name: MacOS wheels
+  - name: MacOS 3.6 test
     if: tag IS present
     os: osx
     language: shell
@@ -86,6 +82,20 @@ matrix:
     before_script: 'true'
     script: python3 -m cibuildwheel --output-dir dist
     after_success: 'true'
+
+before_install:
+
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
+    brew install swig;
+    curl -LO https://raw.githubusercontent.com/GiovanniBussi/macports-ci/master/macports-ci;
+    source ./macports-ci install;
+    yes | sudo port install python$PYTHON;
+    yes | sudo port install py$PYTHON-pip;
+    sudo port select --set python3 python$PYTHON;
+    sudo port select --set pip pip$PYTHON;
+    pip install pyinstaller --user;
+    export PATH=$PATH:/Users/travis/Library/Python/$PYTHON/bin;
+    fi
 
 install:
   - pip3 install -r requirements.txt
