@@ -9,33 +9,21 @@ python:
 os:
   - linux
 
+stages:
+  - test
+  - name: deploy
+    if: tag IS PRESENT AND repo = equinor/camille
+
 matrix:
   fast_finish: true
   include:
-  - name: OSX Python 3.6
+  - name: OSX Python 3.7
     os: osx
     osx_image: xcode9.4
     language: generic
-#  - name: Win64 Python 3.6
-#    os: windows
-#    language: shell
-#    env:
-#      - PATH: /c/Python36:/c/Python36/Scripts:$PATH
-#    before_install:
-#      - export "PATH=/c/Program Files (x86)/Microsoft Visual Studio 14.0/VC/bin/amd64/:$PATH"
-#      - choco install python --version 3.6.0
-#      - python -m pip install --upgrade pip
-#    install: 
-#      - pip3 install -r requirements.txt
-#      - pip3 install --force-reinstall -r requirements-dev.txt
-#      - python -V
-#    before_script: skip
-#    script: 
-#      - python setup.py build_ext --inplace
-#      - python setup.py test --verbose
-#    after_success: skip
-  - name: Manylinux wheels
-    if: tag IS present
+
+  - name: Manylinux
+    stage: deploy
     python: 3.6
     dist: xenial
     sudo: true
@@ -51,8 +39,8 @@ matrix:
     before_script: 'true'
     script: python3 -m cibuildwheel --output-dir dist
     after_success: 'true'
-#  - name: Windows wheels
-#    if: tag IS present
+#  - name: Windows
+#    stage: deploy
 #    os: windows
 #    language: shell
 #    env:
@@ -67,13 +55,13 @@ matrix:
 #    before_script: 'true'
 #    script: python -m cibuildwheel --output-dir dist
 #    after_success: 'true'
-  - name: MacOS 3.6 test
-    if: tag IS present
+  - name: MacOS
+    stage: deploy
     os: osx
     language: shell
     env:
       - PYPI_BUILD: true
-      - CIBW_BUILD: '''cp36-macosx_x86_64'''
+      - CIBW_BUILD: '''cp38-macosx_x86_64'''
       - CIBW_BEFORE_BUILD: '''pip3 install cmake setuptools-scm -r requirements.txt && pip3 install --force-reinstall -r requirements-dev.txt'''
     before_install: python3 -m pip install --upgrade pip
     install: pip3 install twine pathlib setuptools-scm cibuildwheel==1.5.5
@@ -109,7 +97,7 @@ deploy:
 #      secure: jJbW5U0BuXbuTnlsZD7nKRKDGFPkUSVGSnJy0FwZu3CQ2yEk9OUKtPoRS1kaEgVdxoYtCgZemRk1WfkkJqSklitFvrfpKU4WBbdQxUrmHjzaRYxe3dipaP4+CFM7nMG7YNwwScQfn1bocH2AaC/wIcBIoYkZWbJARc5V1NsbvxdEk5dPHaPRLaL4zxjHShfLTBKsUculn9jCwrjj9k35/JycF6hWXzWD+HC4q8oz743Q0oyjkcZu1zYHLns9Ug0lTCDjO4ugFXTcwlyKRXDepSwGy6Y6bwiU9d1/Jj/5TNU1tNkKWHHxjn15O2BWMt/aw97575g08FS+/ewprfRCfYGsXJskr5I5/emRKZ1GODBFkeM/UGzfoOo/9C57J3ULrJcgKsMBIsUabLyXswSpcVEaKTexTqnkEebkJfcwMxL4pz7uU8jHxYvg4gUvrXUrKMzWqwUavwxY4K22dsMtx0U6UlrExpbHvPdn/czDcLL6jyKMkJsfjFHNlNXDBCdI26zT8ldrJqATZpdS9lalnkMo3bw8oDMsuhzyPSbMH1oQ1lMDILllS37CEqN7O05lxYfGYRrbxLfUaxZkA0S/RXZP3KwusnkBHqGVbT/8MZN1woKjze25hKpk1tE9V9ZQIvgPtfC5s7L/T9FqEqlWrZPF2q4e+UydG/lyYThhjHo=
   - provider: pypi
     server: https://test.pypi.org/legacy/
-    edge:
+    edge: # necessary for windows deploy, leaving until the merge to master
       source: native-api/dpl
       branch: z-quotes
     skip_cleanup: true
