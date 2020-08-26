@@ -12,7 +12,8 @@ os:
 stages:
   - test
   - name: deploy
-    if: tag IS PRESENT AND repo = equinor/camille
+    if: tag IS PRESENT
+    # AND repo = equinor/camille
 
 matrix:
   fast_finish: true
@@ -24,7 +25,7 @@ matrix:
 
   - name: OSX Python 3.8
     os: osx
-    osx_image: xcode11.5
+    osx_image: xcode12
     language: generic
 
   - name: Manylinux
