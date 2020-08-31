@@ -36,11 +36,12 @@ def _sqlite(start_date,
     if status is not None:
         query_params.append(' "RWS Status" IN {} '.format(_to_string(status)))
 
+    query_cond = ''
+    if len(query_params) != 0:
+        query_cond = ' WHERE ' + 'AND'.join(query_params)
+
     query = (
-        'SELECT * FROM ' + _to_string(installation) #nosec
-        + ('' if len(query_params) == 0
-           else ' WHERE ' + 'AND'.join(query_params))
-        + ';'
+        'SELECT * FROM ' + _to_string(installation) + query_cond + ';'  # nosec
     )
 
     df = pd.read_sql_query(query, connection,
