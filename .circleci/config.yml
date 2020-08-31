@@ -1,0 +1,111 @@
+version: 2.1
+
+orbs:
+  coverage-reporter: codacy/coverage-reporter@11.2.2
+
+commands:
+  install_build_deps:
+    steps:
+      - run:
+          name: Install cmake, gcc, python3, git
+          command: |
+            sudo apt-get update
+            sudo apt-get install \
+            -y cmake g++ python3 python3-pip git 
+    
+  instal_python_deps:
+    steps:
+      - checkout
+      - install_build_deps
+      - run:
+          name: Install python dependencies
+          command: |
+            python -m pip install --user -r requirements.txt
+            python -m pip install --user -r requirements-dev.txt
+            python -m pip install --user flake8 bandit setuptools-scm 
+            python -m pip install --user coverage codacy-coverage
+
+  flake8_req_check:
+    steps:
+      - run:
+          name: Check code errors (pyflakes)
+          command: flake8 --ignore=E --per-file-ignores="__init__.py:F401" .
+
+  flake8_opt_check:
+    steps:
+      - run:
+          name: Check formatting rules (PEP8)
+          command: git diff HEAD^ | flake8 --diff --per-file-ignores="__init__.py:F401"
+
+  python_build_test:
+    steps:
+      - run:
+          name: build python
+          command: python setup.py build_ext --inplace install --user test
+
+  codacy_check:
+    steps:
+      - when:
+          condition: $CODACY_PROJECT_TOKEN
+          steps:
+            - run:
+                name: codacy check
+                command: |
+                  coverage run setup.py test
+                  coverage xml
+            - coverage-reporter/send_report:
+                coverage-reports: 'coverage.xml'
+                project-token: $CODACY_PROJECT_TOKEN
+
+jobs:
+  python-check:
+    parameters:
+      version:
+        type: string
+        default: "3.6"
+      formatting:
+        type: boolean
+        default: false
+    docker:
+      - image: "circleci/python:<< parameters.version >>"
+    steps:
+      - instal_python_deps
+      - when:
+          condition: << parameters.formatting >>
+          steps:
+            - flake8_opt_check
+      - unless:
+          condition:  << parameters.formatting >>
+          steps:
+            - flake8_req_check
+            - python_build_test
+            - codacy_check
+
+workflows:
+  version: 2
+
+  required:
+    jobs:
+      - python-check:
+          name: Python 3.5 code error and test check
+          version: "3.5"
+          formatting: false
+      - python-check:
+          name: Python 3.6 code error and test check
+          version: "3.6"
+          formatting: false
+      - python-check:
+          name: Python 3.7 code error and test check
+          version: "3.7"
+          formatting: false
+      - python-check:
+          name: Python 3.8 code error and test check
+          version: "3.8"
+          formatting: false
+  
+  optional:
+    jobs:
+      - python-check:
+          name: Python formatting check
+          version: "3.8"
+          formatting: true
