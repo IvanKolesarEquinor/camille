@@ -1,0 +1,219 @@
+version: 2.1
+
+commands:
+
+  bootstrap-macos:
+    parameters:
+      python-version:
+        type: string
+    steps:
+      - run:
+          name: Setup MacOS environment
+          command: |
+            curl -O https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-x86_64.sh --silent
+            bash Miniconda3-latest-MacOSX-x86_64.sh -b -f >> build.log
+            ~/miniconda3/bin/conda create -y -n py<< parameters.python-version >> python=<< parameters.python-version >>
+            ln -s ~/miniconda3/envs/py<< parameters.python-version >>/bin/python ~/python<< parameters.python-version >>
+            ~/python<< parameters.python-version >> -m venv py_venv
+
+  bootstrap-win:
+    parameters:
+      python-version:
+        type: string
+    steps:
+      - run:
+          name: Setup Win environment
+          command: |
+            conda init powershell
+            conda create -y -n py-<< parameters.python-version >> python=<< parameters.python-version >>
+            conda activate py-<< parameters.python-version >>
+            python -m venv py_venv
+
+  bootstrap-linux:
+    steps:
+      - run:
+          name: Setup Linux environment
+          command: |
+            sudo apt-get update
+            sudo apt-get install \
+            -y cmake g++ python3 python3-pip git 
+            python -m venv py_venv
+
+  install-python-deps:
+    steps:
+      - run:
+          name: Install Python dependencies
+          command: |
+            . py_venv/bin/activate
+            python --version
+            python -m pip install --upgrade pip
+            python -m pip install -r requirements.txt
+            python -m pip install --force-reinstall -r requirements-dev.txt
+            python -m pip install cmake flake8 bandit setuptools-scm 
+            python -m pip install coverage codacy-coverage
+
+  python-build-test:
+    steps:
+      - run:
+          name: Build & test python
+          command: |
+            . py_venv/bin/activate
+            python --version
+            python -m pip freeze
+            python setup.py build_ext --inplace
+            python setup.py test --verbose
+
+  flake8-req-check:
+    steps:
+      - run:
+          name: Check code errors (pyflakes)
+          command: |
+            . py_venv/bin/activate
+            flake8 --ignore=E --per-file-ignores="__init__.py:F401" --exclude=py_venv .
+
+  flake8-opt-check:
+    steps:
+      - run:
+          name: Check formatting rules (PEP8)
+          command: |
+            . py_venv/bin/activate
+            git diff HEAD^ | flake8 --diff --per-file-ignores="__init__.py:F401"
+
+  bandit-check:
+    steps:
+      - run:
+          name: Bandit security check
+          command: |
+            . py_venv/bin/activate
+            bandit -c bandit.yml -r camille
+
+  codacy-check:
+    steps:
+      - run:
+          name: Codacy code coverage check
+          command: |
+            if [ ! -z "${CODACY_PROJECT_TOKEN}" ]; then 
+              coverage run setup.py test;
+              coverage xml;
+              python-codacy-coverage -r coverage.xml;
+            fi
+
+  create-dist:
+    steps:
+      - run:
+          name: Create source package
+          command: |
+            . py_venv/bin/activate
+            python -m pip install twine
+            python setup.py sdist
+
+  upload-dist:
+    steps:
+      - run:
+          name: Upload to pypi
+          command: |
+            . py_venv/bin/activate
+            twine upload dist/*
+
+jobs:
+  python-check:
+    parameters:
+      version:
+        type: string
+        default: "3.6"
+      formatting:
+        type: boolean
+        default: false
+    docker:
+      - image: "circleci/python:<< parameters.version >>"
+    steps:
+      - checkout
+      - bootstrap-linux
+      - install-python-deps
+      - flake8-req-check
+      - bandit-check
+      - python-build-test
+      - codacy-check
+
+  python-formatting-check:
+    docker:
+      - image: "circleci/python:3.8"
+    steps:
+      - checkout
+      - bootstrap-linux
+      - install-python-deps
+      - flake8-opt-check
+
+  python-macos-check:
+    parameters:
+      python-version:
+        type: string
+        default: "3.6"
+    macos:
+      xcode: 11.0.0
+    steps:
+      - checkout
+      - bootstrap-macos:
+          python-version: << parameters.python-version >>
+      - install-python-deps
+      - python-build-test
+  
+  pypi-deploy:
+    docker:
+      - image: "circleci/python:3.6"
+    steps:
+      - checkout
+      - bootstrap-linux
+      - install-python-deps
+      - flake8-req-check
+      - bandit-check
+      - python-build-test
+      - create-dist
+      - upload-dist
+
+workflows:
+  version: 2
+
+  required:
+    jobs:
+      - python-check:
+          name: Python 3.5
+          version: "3.5"
+      - python-check:
+          name: Python 3.6
+          version: "3.6"
+      - python-check:
+          name: Python 3.7
+          version: "3.7"
+      - python-check:
+          name: Python 3.8
+          version: "3.8"
+  
+  macos-tests:
+    jobs:
+      - python-macos-check:
+          name: MacOS Python 3.5
+          python-version: "3.5"
+      - python-macos-check:
+          name: MacOS Python 3.6
+          python-version: "3.6"
+      - python-macos-check:
+          name: MacOS Python 3.7
+          python-version: "3.7"
+      - python-macos-check:
+          name: MacOS Python 3.8
+          python-version: "3.8"
+
+  pypi-deploy:
+    jobs:
+      - pypi-deploy:
+          filters:
+            tags:
+              only: /[0-9]+(\.[0-9]+)*/
+            branches:
+              ignore: /.*/
+
+  optional:
+    jobs:
+      - python-formatting-check:
+          name: Python formatting check
