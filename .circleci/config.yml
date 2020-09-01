@@ -1,8 +1,5 @@
 version: 2.1
 
-orbs:
-  coverage-reporter: codacy/coverage-reporter@11.2.2
-
 commands:
   install_build_deps:
     steps:
@@ -45,17 +42,14 @@ commands:
 
   codacy_check:
     steps:
-      - when:
-          condition: $CODACY_PROJECT_TOKEN
-          steps:
-            - run:
-                name: codacy check
-                command: |
-                  coverage run setup.py test
-                  coverage xml
-            - coverage-reporter/send_report:
-                coverage-reports: 'coverage.xml'
-                project-token: $CODACY_PROJECT_TOKEN
+      - run:
+          name: codacy check
+          command: |
+            if [ ! -z "${CODACY_PROJECT_TOKEN}" ]; then 
+              coverage run setup.py test;
+              coverage xml;
+              python-codacy-coverage -r coverage.xml;
+            fi
 
 jobs:
   python-check:
