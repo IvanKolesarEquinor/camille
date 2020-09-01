@@ -34,16 +34,24 @@ commands:
           name: Check formatting rules (PEP8)
           command: git diff HEAD^ | flake8 --diff --per-file-ignores="__init__.py:F401"
 
+  bandit_check:
+    steps:
+      - run:
+          name: Bandit security check
+          command: bandit -c bandit.yml -r camille
+
   python_build_test:
     steps:
       - run:
-          name: build python
-          command: python setup.py build_ext --inplace install --user test
+          name: Build & test python
+          command: |
+            python setup.py build_ext --inplace
+            python setup.py test --verbose
 
   codacy_check:
     steps:
       - run:
-          name: codacy check
+          name: Codacy code coverage check
           command: |
             if [ ! -z "${CODACY_PROJECT_TOKEN}" ]; then 
               coverage run setup.py test;
@@ -72,6 +80,7 @@ jobs:
           condition:  << parameters.formatting >>
           steps:
             - flake8_req_check
+            - bandit_check
             - python_build_test
             - codacy_check
 
@@ -81,19 +90,19 @@ workflows:
   required:
     jobs:
       - python-check:
-          name: Python 3.5 code error and test check
+          name: Python 3.5
           version: "3.5"
           formatting: false
       - python-check:
-          name: Python 3.6 code error and test check
+          name: Python 3.6
           version: "3.6"
           formatting: false
       - python-check:
-          name: Python 3.7 code error and test check
+          name: Python 3.7
           version: "3.7"
           formatting: false
       - python-check:
-          name: Python 3.8 code error and test check
+          name: Python 3.8
           version: "3.8"
           formatting: false
   
