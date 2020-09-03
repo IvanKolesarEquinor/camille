@@ -2,7 +2,7 @@ version: 2.1
 
 commands:
 
-  bootstrap_macos:
+  bootstrap-macos:
     parameters:
       python-version:
         type: string
@@ -19,17 +19,38 @@ commands:
             # Create appropriate virtual environment
             ~/python<< parameters.python-version >> -m venv py_venv
 
-
-  install_macos_build_deps:
+  bootstrap-linux:
     steps:
       - run:
-          name: Setup MacOS environment
+          name: Setup Linux environment
+          command: |
+            sudo apt-get update
+            sudo apt-get install \
+            -y cmake g++ python3 python3-pip git 
+            python -m venv py_venv
+
+#  install_macos_python_deps:
+  install_python_deps:
+    steps:
+      - run:
+          name: Install Python dependencies
           command: |
             . py_venv/bin/activate
             python -m pip install --upgrade pip
             python -m pip install -r requirements.txt
             python -m pip install --force-reinstall -r requirements-dev.txt
-            python -m pip install cmake setuptools-scm 
+            python -m pip install cmake flake8 bandit setuptools-scm 
+            python -m pip install coverage codacy-coverage
+
+#  instal_python_deps:
+#    steps:
+#      - run:
+#          name: Install python dependencies
+#          command: |
+#            python -m pip install --user -r requirements.txt
+#            python -m pip install --user -r requirements-dev.txt
+#            python -m pip install --user flake8 bandit setuptools-scm 
+#            python -m pip install --user coverage codacy-coverage
 
   python_build_test_macos:
     steps:
@@ -42,50 +63,36 @@ commands:
             python setup.py build_ext --inplace
             python setup.py test --verbose
 
-  install_build_deps:
-    steps:
-      - run:
-          name: Install cmake, gcc, python3, git
-          command: |
-            sudo apt-get update
-            sudo apt-get install \
-            -y cmake g++ python3 python3-pip git 
-    
-  instal_python_deps:
-    steps:
-      - checkout
-      - install_build_deps
-      - run:
-          name: Install python dependencies
-          command: |
-            python -m pip install --user -r requirements.txt
-            python -m pip install --user -r requirements-dev.txt
-            python -m pip install --user flake8 bandit setuptools-scm 
-            python -m pip install --user coverage codacy-coverage
-
   flake8_req_check:
     steps:
       - run:
           name: Check code errors (pyflakes)
-          command: flake8 --ignore=E --per-file-ignores="__init__.py:F401" .
+          command: |
+            . py_venv/bin/activate
+            flake8 --ignore=E --per-file-ignores="__init__.py:F401" --exclude=py_venv .
 
   flake8_opt_check:
     steps:
       - run:
           name: Check formatting rules (PEP8)
-          command: git diff HEAD^ | flake8 --diff --per-file-ignores="__init__.py:F401"
+          command: |
+            . py_venv/bin/activate
+            git diff HEAD^ | flake8 --diff --per-file-ignores="__init__.py:F401"
 
   bandit_check:
     steps:
       - run:
           name: Bandit security check
-          command: bandit -c bandit.yml -r camille
+          command: |
+            . py_venv/bin/activate
+            bandit -c bandit.yml -r camille
 
   python_build_test:
     steps:
       - run:
           name: Build & test python
           command: |
+            . py_venv/bin/activate
             python --version
             pip freeze
             python setup.py build_ext --inplace
@@ -114,20 +121,24 @@ jobs:
     docker:
       - image: "circleci/python:<< parameters.version >>"
     steps:
-      - instal_python_deps
-      - when:
-          condition: << parameters.formatting >>
-          steps:
-            - flake8_opt_check
-      - unless:
-          condition:  << parameters.formatting >>
-          steps:
-            - flake8_req_check
-            - bandit_check
-            - python_build_test
-            - codacy_check
+      - checkout
+      - bootstrap-linux
+      - install_python_deps
+      - flake8_req_check
+      - bandit_check
+      - python_build_test
+      - codacy_check
 
-  macos-python-check:
+  python-formatting-check:
+    docker:
+      - image: "circleci/python:3.8"
+    steps:
+      - checkout
+      - bootstrap-linux
+      - install_python_deps
+      - flake8_opt_check
+
+  python-macos-check:
     parameters:
       python-version:
         type: string
@@ -136,9 +147,9 @@ jobs:
       xcode: 11.0.0
     steps:
       - checkout
-      - bootstrap_macos:
+      - bootstrap-macos:
           python-version: << parameters.python-version >>
-      - install_macos_build_deps
+      - install_python_deps
       - python_build_test_macos
 
 workflows:
@@ -149,32 +160,26 @@ workflows:
       - python-check:
           name: Python 3.5
           version: "3.5"
-          formatting: false
       - python-check:
           name: Python 3.6
           version: "3.6"
-          formatting: false
       - python-check:
           name: Python 3.7
           version: "3.7"
-          formatting: false
       - python-check:
           name: Python 3.8
           version: "3.8"
-          formatting: false
   
   macos-tests:
     jobs:
-      - macos-python-check:
+      - python-macos-check:
           name: MacOS Python 3.5
           python-version: "3.5"
-      - macos-python-check:
+      - python-macos-check:
           name: MacOS Python 3.6
           python-version: "3.6"
 
   optional:
     jobs:
-      - python-check:
+      - python-formatting-check:
           name: Python formatting check
-          version: "3.8"
-          formatting: true
