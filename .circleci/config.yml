@@ -2,28 +2,41 @@ version: 2.1
 
 commands:
 
+  bootstrap_macos:
+    parameters:
+      python-version:
+        type: string
+    steps:
+      - run:
+          name: Setup MacOS environment
+          command: |
+            # Get Conda
+            curl -O https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-x86_64.sh --silent
+            bash Miniconda3-latest-MacOSX-x86_64.sh -b -f >> build.log
+            # Install desired python script
+            ~/miniconda3/bin/conda create -n py<< parameters.python-version >> python=<< parameters.python-version >> -y
+            ln -s ~/miniconda3/envs/py<< parameters.python-version >>/bin/python ~/python<< parameters.python-version >>
+            # Create appropriate virtual environment
+            ~/python<< parameters.python-version >> -m venv py_venv
+
+
   install_macos_build_deps:
     steps:
       - run:
           name: Setup MacOS environment
           command: |
-            curl -O https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-x86_64.sh --silent
-            bash Miniconda3-latest-MacOSX-x86_64.sh -b -f >> build.log
-            ~/miniconda3/bin/conda create -n py3.5 python=3.5 -y
-            ln -s ~/miniconda3/envs/py3.5/bin/python ~/python3.5
-            ~/python3.5 -m venv venv3.5
-            . venv3.5/bin/activate
+            . py_venv/bin/activate
             python -m pip install --upgrade pip
             python -m pip install -r requirements.txt
-            python -m pip install -r requirements-dev.txt
+            python -m pip install --force-reinstall -r requirements-dev.txt
             python -m pip install cmake setuptools-scm 
 
-  macos_python_build_test:
+  python_build_test_macos:
     steps:
       - run:
           name: Build & test python
           command: |
-            . venv3.5/bin/activate
+            . py_venv/bin/activate
             python --version
             python -m pip freeze
             python setup.py build_ext --inplace
@@ -116,15 +129,17 @@ jobs:
 
   macos-python-check:
     parameters:
-      version:
+      python-version:
         type: string
         default: "3.6"
     macos:
       xcode: 11.0.0
     steps:
       - checkout
+      - bootstrap_macos:
+          python-version: << parameters.python-version >>
       - install_macos_build_deps
-      - macos_python_build_test
+      - python_build_test_macos
 
 workflows:
   version: 2
@@ -150,7 +165,12 @@ workflows:
   
   macos-tests:
     jobs:
-      - macos-python-check
+      - macos-python-check:
+          name: MacOS Python 3.5
+          python-version: "3.5"
+      - macos-python-check:
+          name: MacOS Python 3.6
+          python-version: "3.6"
 
   optional:
     jobs:
