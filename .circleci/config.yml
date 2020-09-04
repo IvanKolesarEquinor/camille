@@ -1,8 +1,5 @@
 version: 2.1
 
-orbs:
-  win: circleci/windows@2.2.0
-
 commands:
 
   bootstrap-macos:
@@ -144,21 +141,6 @@ jobs:
       - install_python_deps
       - python_build_test
 
-  python-win-check:
-    parameters:
-      python-version:
-        type: string
-        default: "3.5"
-    executor:
-      name: win/default
-      shell: powershell.exe
-    steps:
-      - checkout
-      - bootstrap-win:
-          python-version: << parameters.python-version >>
-      - install_python_deps
-      - python_build_test
-
 workflows:
   version: 2
 
@@ -191,12 +173,6 @@ workflows:
       - python-macos-check:
           name: MacOS Python 3.8
           python-version: "3.8"
-
-  win-tests:
-    jobs:
-      - python-win-check:
-          name: Win Python 3.5
-          python-version: "3.5"
 
   optional:
     jobs:
