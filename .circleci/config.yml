@@ -140,6 +140,36 @@ jobs:
           python-version: << parameters.python-version >>
       - install_python_deps
       - python_build_test
+  
+  jobs-test:
+    steps:
+      - python-check:
+          name: Python 3.5
+          version: "3.5"
+
+#  deploy-pypi:
+#    steps:
+#      - run:
+#          name: Install deploy tools
+#          command: |
+#            . py_venv/bin/activate
+#            python -m pip install twine
+#      - run:
+#          name: Init .pypirc
+#          command: |
+#            echo -e "[pypi]" >> ~/.pypirc
+#            echo -e "username = ikol" >> ~/.pypirc
+#            echo -e "password = $PYPI_PASSWORD" >> ~/.pypirc
+#      - run:
+#          name: Create source package
+#          command: |
+#            . py_venv/bin/activate
+#            python setup.py sdist
+#      - run:
+#          name: Upload to pypi
+#          command: |
+#            . py_venv/bin/activate
+#            twine upload --repository-url https://test.pypi.org/legacy/ dist/*
 
 workflows:
   version: 2
@@ -173,6 +203,18 @@ workflows:
       - python-macos-check:
           name: MacOS Python 3.8
           python-version: "3.8"
+
+  pypi-deploy:
+    jobs:
+      - jobs-test
+#      - deploy-pypi:
+#          requires:
+#            - required
+#          filters:
+#            tags:
+#              only: /[0-9]+(\.[0-9]+)*/
+#            branches:
+#              ignore: /.*/
 
   optional:
     jobs:
