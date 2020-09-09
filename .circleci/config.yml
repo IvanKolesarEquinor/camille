@@ -98,26 +98,13 @@ commands:
               python-codacy-coverage -r coverage.xml;
             fi
 
-  init-pypirc:
-    steps:
-      - run:
-          name: Install deploy tools
-          command: |
-            . py_venv/bin/activate
-            python -m pip install twine
-      - run:
-          name: Init .pypirc
-          command: |
-            echo -e "[pypi]" >> ~/.pypirc
-            echo -e "username = ikol" >> ~/.pypirc
-            echo -e "password = $PYPI_PASSWORD" >> ~/.pypirc
-
   create-dist:
     steps:
       - run:
           name: Create source package
           command: |
             . py_venv/bin/activate
+            python -m pip install twine
             python setup.py sdist
 
   upload-dist:
@@ -126,7 +113,7 @@ commands:
           name: Upload to pypi
           command: |
             . py_venv/bin/activate
-            twine upload --repository-url https://test.pypi.org/legacy/ --config-file ~/.pypirc dist/*
+            twine upload --repository-url https://test.pypi.org/legacy/ dist/*
 
 jobs:
   python-check:
@@ -181,7 +168,6 @@ jobs:
       - flake8-req-check
       - bandit-check
       - python-build-test
-      - init-pypirc
       - create-dist
       - upload-dist
 
