@@ -113,7 +113,7 @@ commands:
           name: Upload to pypi
           command: |
             . py_venv/bin/activate
-            twine upload dist/*
+            twine upload  --repository testpypi --skip-existing dist/*
 
 jobs:
   python-check:
