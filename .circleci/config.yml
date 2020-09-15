@@ -172,9 +172,9 @@ jobs:
     docker:
       - image: "circleci/python:3.6"
     environment:
-      - CIBW_BUILD: '''cp35-manylinux_x86_64 cp36-manylinux_x86_64 cp37-manylinux_x86_64 cp38-manylinux_x86_64'''
-      - CIBW_BEFORE_ALL: '''yum install -y gcc ninja-build'''
-      - CIBW_BEFORE_BUILD: '''pip install cmake setuptools-scm -r requirements.txt && pip install --force-reinstall -r requirements-dev.txt'''
+      - CIBW_BUILD: "cp35-manylinux_x86_64 cp36-manylinux_x86_64 cp37-manylinux_x86_64 cp38-manylinux_x86_64"
+      - CIBW_BEFORE_ALL: "yum install -y gcc ninja-build"
+      - CIBW_BEFORE_BUILD: "pip install cmake setuptools-scm -r requirements.txt && pip install --force-reinstall -r requirements-dev.txt"
     steps:
       - checkout
       - setup_remote_docker
