@@ -98,7 +98,7 @@ commands:
               python-codacy-coverage -r coverage.xml;
             fi
 
-  create-dist:
+  create-sdist:
     steps:
       - run:
           name: Create source package
@@ -107,7 +107,7 @@ commands:
             python -m pip install twine
             python setup.py sdist
 
-  upload-dist:
+  upload-pypi:
     steps:
       - run:
           name: Upload to pypi
@@ -158,23 +158,43 @@ jobs:
       - install-python-deps
       - python-build-test
   
-  pypi-deploy:
+  sdist-deploy:
     docker:
       - image: "circleci/python:3.6"
     steps:
       - checkout
       - bootstrap-linux
       - install-python-deps
-      - flake8-req-check
-      - bandit-check
-      - python-build-test
-      - create-dist
-      - upload-dist
+      - create-sdist
+      - upload-pypi
+  
+  wheels-manylinux-deploy:
+    docker:
+      - image: "circleci/python:3.6"
+    environment:
+      - CIBW_BUILD: '''cp35-manylinux_x86_64 cp36-manylinux_x86_64 cp37-manylinux_x86_64 cp38-manylinux_x86_64'''
+      - CIBW_BEFORE_ALL: '''yum install -y gcc ninja-build'''
+      - CIBW_BEFORE_BUILD: '''pip install cmake setuptools-scm -r requirements.txt && pip install --force-reinstall -r requirements-dev.txt'''
+    steps:
+      - checkout
+      - setup_remote_docker
+      - run:
+          name: Build the Linux wheels.
+          command: |
+            . py_venv/bin/activate
+            python -m pip install twine cibuildwheel==1.6.0
+            python -m cibuildwheel --output-dir dist
+      - run:
+          name: Upload the Linux wheels.
+          command: |
+            . py_venv/bin/activate
+            python -m pip install twine
+            twine upload  --repository testpypi --skip-existing dist/*
 
 workflows:
   version: 2
 
-  required:
+  linux-check:
     jobs:
       - python-check:
           name: Python 3.5
@@ -188,8 +208,27 @@ workflows:
       - python-check:
           name: Python 3.8
           version: "3.8"
+      - sdist-deploy:
+          name: Create and deploy sdist
+          requires:
+            - Python 3.5
+            - Python 3.6
+            - Python 3.7
+            - Python 3.8
+          filters:
+            tags:
+              only: /[0-9]+(\.[0-9]+)*/
+      - wheels-manylinux-deploy:
+          name: Create and deploy linux wheels
+          requires:
+            - Create and deploy sdist
+          filters:
+            tags:
+              only: /[0-9]+(\.[0-9]+)*/
+            branches:
+              ignore: /.*/
   
-  macos-tests:
+  macos-check:
     jobs:
       - python-macos-check:
           name: MacOS Python 3.5
@@ -203,15 +242,6 @@ workflows:
       - python-macos-check:
           name: MacOS Python 3.8
           python-version: "3.8"
-
-  pypi-deploy:
-    jobs:
-      - pypi-deploy:
-          filters:
-            tags:
-              only: /[0-9]+(\.[0-9]+)*/
-            branches:
-              ignore: /.*/
 
   optional:
     jobs:
