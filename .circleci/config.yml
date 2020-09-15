@@ -181,13 +181,11 @@ jobs:
       - run:
           name: Build the Linux wheels.
           command: |
-            . py_venv/bin/activate
             python -m pip install twine cibuildwheel==1.6.0
             python -m cibuildwheel --output-dir dist
       - run:
           name: Upload the Linux wheels.
           command: |
-            . py_venv/bin/activate
             python -m pip install twine
             twine upload  --repository testpypi --skip-existing dist/*
 
