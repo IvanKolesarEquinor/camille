@@ -13,7 +13,7 @@ commands:
             curl -O https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-x86_64.sh --silent
             bash Miniconda3-latest-MacOSX-x86_64.sh -b -f >> build.log
             ~/miniconda3/bin/conda create -y -n py<< parameters.python-version >> python=<< parameters.python-version >>
-            ln -s ~/miniconda3/envs/py<< parameters.python-version >>/bin/python ~/python3
+            ln -s ~/miniconda3/envs/py<< parameters.python-version >>/bin/python ~/python<< parameters.python-version >>
 #            ~/python<< parameters.python-version >> -m venv py_venv
 
   bootstrap-win:
@@ -39,23 +39,31 @@ commands:
 #            python -m venv py_venv
 
   install-python-deps:
+    parameters:
+      python-version:
+        type: string
+        default: "3"
     steps:
       - run:
           name: Install Python dependencies
           command: |
-            python3 --version
-            python3 -m pip install -r requirements.txt
-            python3 -m pip install -r requirements-dev.txt
-            python3 -m pip install cmake flake8 bandit setuptools-scm 
-            python3 -m pip install coverage codacy-coverage
+            python<< parameters.python-version >> --version
+            python<< parameters.python-version >> -m pip install -r requirements.txt
+            python<< parameters.python-version >> -m pip install -r requirements-dev.txt
+            python<< parameters.python-version >> -m pip install cmake flake8 bandit setuptools-scm 
+            python<< parameters.python-version >> -m pip install coverage codacy-coverage
 
   python-build-test:
+    parameters:
+      python-version:
+        type: string
+        default: "3"
     steps:
       - run:
           name: Build & test python
           command: |
-            python3 setup.py build_ext --inplace
-            python3 setup.py test --verbose
+            python<< parameters.python-version >> setup.py build_ext --inplace
+            python<< parameters.python-version >> setup.py test --verbose
 
   flake8-req-check:
     steps:
@@ -109,10 +117,6 @@ jobs:
     parameters:
       version:
         type: string
-        default: "3.6"
-      formatting:
-        type: boolean
-        default: false
     docker:
       - image: "circleci/python:<< parameters.version >>"
     steps:
@@ -137,15 +141,16 @@ jobs:
     parameters:
       python-version:
         type: string
-        default: "3.6"
     macos:
       xcode: 11.0.0
     steps:
       - checkout
       - bootstrap-macos:
           python-version: << parameters.python-version >>
-      - install-python-deps
-      - python-build-test
+      - install-python-deps:
+          python-version: << parameters.python-version >>
+      - python-build-test:
+          python-version: << parameters.python-version >>
   
   sdist-deploy:
     docker:
@@ -170,13 +175,13 @@ jobs:
       - run:
           name: Build the Linux wheels.
           command: |
-            python -m pip install cibuildwheel==1.6.0
-            python -m cibuildwheel --output-dir dist
+            python3 -m pip install cibuildwheel==1.6.0
+            python3 -m cibuildwheel --output-dir dist
       - run:
           name: Upload the Linux wheels.
           command: |
-            python -m pip install twine
-            python -m twine upload --skip-existing dist/*
+            python3 -m pip install twine
+            python3 -m twine upload --skip-existing dist/*
 
 
   wheels-macos-deploy:
