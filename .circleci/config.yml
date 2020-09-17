@@ -13,7 +13,7 @@ commands:
             curl -O https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-x86_64.sh --silent
             bash Miniconda3-latest-MacOSX-x86_64.sh -b -f >> build.log
             ~/miniconda3/bin/conda create -y -n py<< parameters.python-version >> python=<< parameters.python-version >>
-            ln -s ~/miniconda3/envs/py<< parameters.python-version >>/bin/python ~/python<< parameters.python-version >>
+            ln -s ~/miniconda3/envs/py<< parameters.python-version >>/bin/python ~/python3
 #            ~/python<< parameters.python-version >> -m venv py_venv
 
   bootstrap-win:
@@ -43,19 +43,19 @@ commands:
       - run:
           name: Install Python dependencies
           command: |
-            python --version
-            python -m pip install -r requirements.txt
-            python -m pip install -r requirements-dev.txt
-            python -m pip install cmake flake8 bandit setuptools-scm 
-            python -m pip install coverage codacy-coverage
+            python3 --version
+            python3 -m pip install -r requirements.txt
+            python3 -m pip install -r requirements-dev.txt
+            python3 -m pip install cmake flake8 bandit setuptools-scm 
+            python3 -m pip install coverage codacy-coverage
 
   python-build-test:
     steps:
       - run:
           name: Build & test python
           command: |
-            python setup.py build_ext --inplace
-            python setup.py test --verbose
+            python3 setup.py build_ext --inplace
+            python3 setup.py test --verbose
 
   flake8-req-check:
     steps:
@@ -94,14 +94,14 @@ commands:
       - run:
           name: Create source package
           command: |
-            python setup.py sdist
+            python3 setup.py sdist
 
   upload-pypi:
     steps:
       - run:
           name: Upload to pypi
           command: |
-            python -m pip install twine
+            python3 -m pip install twine
             twine upload  --repository testpypi --skip-existing dist/*
 
 jobs:
