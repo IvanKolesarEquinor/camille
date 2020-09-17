@@ -14,7 +14,7 @@ commands:
             bash Miniconda3-latest-MacOSX-x86_64.sh -b -f >> build.log
             ~/miniconda3/bin/conda create -y -n py<< parameters.python-version >> python=<< parameters.python-version >>
             ln -s ~/miniconda3/envs/py<< parameters.python-version >>/bin/python ~/python<< parameters.python-version >>
-            ~/python<< parameters.python-version >> -m venv py_venv
+#            ~/python<< parameters.python-version >> -m venv py_venv
 
   bootstrap-win:
     parameters:
@@ -27,7 +27,7 @@ commands:
             conda init powershell
             conda create -y -n py-<< parameters.python-version >> python=<< parameters.python-version >>
             conda activate py-<< parameters.python-version >>
-            python -m venv py_venv
+#            python -m venv py_venv
 
   bootstrap-linux:
     steps:
@@ -35,16 +35,14 @@ commands:
           name: Setup Linux environment
           command: |
             sudo apt-get update
-            sudo apt-get install \
-            -y cmake g++ git 
-            python -m venv py_venv
+            sudo apt-get install -y cmake g++ git 
+#            python -m venv py_venv
 
   install-python-deps:
     steps:
       - run:
           name: Install Python dependencies
           command: |
-            . py_venv/bin/activate
             python --version
             python -m pip install -r requirements.txt
             python -m pip install -r requirements-dev.txt
@@ -56,9 +54,6 @@ commands:
       - run:
           name: Build & test python
           command: |
-            . py_venv/bin/activate
-            python --version
-            python -m pip freeze
             python setup.py build_ext --inplace
             python setup.py test --verbose
 
@@ -67,15 +62,13 @@ commands:
       - run:
           name: Check code errors (pyflakes)
           command: |
-            . py_venv/bin/activate
-            flake8 --select=F --per-file-ignores="__init__.py:F401" --exclude=py_venv .
+            flake8 --select=F --per-file-ignores="__init__.py:F401" .
 
   flake8-opt-check:
     steps:
       - run:
           name: Check formatting rules (PEP8)
           command: |
-            . py_venv/bin/activate
             git diff HEAD^ | flake8 --diff --per-file-ignores="__init__.py:F401"
 
   bandit-check:
@@ -83,7 +76,6 @@ commands:
       - run:
           name: Bandit security check
           command: |
-            . py_venv/bin/activate
             bandit -c bandit.yml -r camille
 
   codacy-check:
@@ -91,7 +83,6 @@ commands:
       - run:
           name: Codacy code coverage check
           command: |
-            . py_venv/bin/activate
             if [ ! -z "${CODACY_PROJECT_TOKEN}" ]; then 
               coverage run setup.py test;
               coverage xml;
@@ -103,8 +94,6 @@ commands:
       - run:
           name: Create source package
           command: |
-            . py_venv/bin/activate
-            python -m pip install twine
             python setup.py sdist
 
   upload-pypi:
@@ -112,7 +101,7 @@ commands:
       - run:
           name: Upload to pypi
           command: |
-            . py_venv/bin/activate
+            python -m pip install twine
             twine upload  --repository testpypi --skip-existing dist/*
 
 jobs:
@@ -181,7 +170,7 @@ jobs:
       - run:
           name: Build the Linux wheels.
           command: |
-            python -m pip install twine cibuildwheel==1.6.0
+            python -m pip install cibuildwheel==1.6.0
             python -m cibuildwheel --output-dir dist
       - run:
           name: Upload the Linux wheels.
@@ -201,7 +190,7 @@ jobs:
       - run:
           name: Build MacOS wheels.
           command: |
-            pip3 install twine cibuildwheel==1.6.0
+            pip3 install cibuildwheel==1.6.0
             python3 -m cibuildwheel --output-dir dist
       - run:
           name: Upload MacOS wheels.
