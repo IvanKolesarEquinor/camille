@@ -185,7 +185,7 @@ jobs:
           name: Upload the Linux wheels.
           command: |
             python3 -m pip install twine
-            python3 -m twine upload --skip-existing dist/*
+            python3 -m twine upload --repository testpypi --skip-existing dist/*
 
 
   wheels-macos-deploy:
@@ -205,7 +205,7 @@ jobs:
           name: Upload MacOS wheels.
           command: |
             pip3 install twine
-            python3 -m twine upload --skip-existing dist/*
+            python3 -m twine upload --repository testpypi --skip-existing dist/*
 
 workflows:
   version: 2
