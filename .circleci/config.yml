@@ -13,8 +13,8 @@ commands:
             curl -O https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-x86_64.sh --silent
             bash Miniconda3-latest-MacOSX-x86_64.sh -b -f >> build.log
             ~/miniconda3/bin/conda create -y -n py<< parameters.python-version >> python=<< parameters.python-version >>
-            ln -s ~/miniconda3/envs/py<< parameters.python-version >>/bin/python ~/python<< parameters.python-version >>
-#            ~/python<< parameters.python-version >> -m venv py_venv
+            ln -s ~/miniconda3/envs/py<< parameters.python-version >>/bin/python ~/python3
+            ~/python3 -m venv py_venv
 
   bootstrap-win:
     parameters:
@@ -27,7 +27,6 @@ commands:
             conda init powershell
             conda create -y -n py-<< parameters.python-version >> python=<< parameters.python-version >>
             conda activate py-<< parameters.python-version >>
-#            python -m venv py_venv
 
   bootstrap-linux:
     steps:
@@ -36,34 +35,39 @@ commands:
           command: |
             sudo apt-get update
             sudo apt-get install -y cmake g++ git 
-#            python -m venv py_venv
 
   install-python-deps:
     parameters:
-      python-version:
+      os:
         type: string
-        default: "3"
+        default: ""
     steps:
       - run:
           name: Install Python dependencies
           command: |
-            python<< parameters.python-version >> --version
-            python<< parameters.python-version >> -m pip install -r requirements.txt
-            python<< parameters.python-version >> -m pip install -r requirements-dev.txt
-            python<< parameters.python-version >> -m pip install cmake flake8 bandit setuptools-scm 
-            python<< parameters.python-version >> -m pip install coverage codacy-coverage
+            if [ "<< parameters.os >>" == "mac" ]; then 
+              . py_venv/bin/activate
+            fi
+            python3 --version
+            python3 -m pip install -r requirements.txt
+            python3 -m pip install -r requirements-dev.txt
+            python3 -m pip install cmake flake8 bandit setuptools-scm 
+            python3 -m pip install coverage codacy-coverage
 
   python-build-test:
     parameters:
-      python-version:
+      os:
         type: string
-        default: "3"
+        default: ""
     steps:
       - run:
           name: Build & test python
           command: |
-            python<< parameters.python-version >> setup.py build_ext --inplace
-            python<< parameters.python-version >> setup.py test --verbose
+            if [ "<< parameters.os >>" == "mac" ]; then 
+              . py_venv/bin/activate
+            fi
+            python3 setup.py build_ext --inplace
+            python3 setup.py test --verbose
 
   flake8-req-check:
     steps:
@@ -148,9 +152,9 @@ jobs:
       - bootstrap-macos:
           python-version: << parameters.python-version >>
       - install-python-deps:
-          python-version: << parameters.python-version >>
+          os: "mac"
       - python-build-test:
-          python-version: << parameters.python-version >>
+          os: "mac"
   
   sdist-deploy:
     docker:
