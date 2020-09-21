@@ -114,7 +114,7 @@ commands:
           name: Upload to pypi
           command: |
             python3 -m pip install twine
-            twine upload --skip-existing dist/*
+            twine upload --repository testpypi --skip-existing dist/*
 
 jobs:
   python-check:
@@ -199,7 +199,7 @@ jobs:
       - run:
           name: Build MacOS wheels.
           command: |
-            python3 -m pip3 install cibuildwheel==1.6.0
+            python3 -m pip install cibuildwheel==1.6.0
             python3 -m cibuildwheel --output-dir dist
       - upload-pypi
 #      - run:
