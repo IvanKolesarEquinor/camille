@@ -108,13 +108,21 @@ commands:
           command: |
             python3 setup.py sdist
 
+  create-wheel:
+    steps:
+      - run:
+          name: Create wheel
+          command: |
+            python3 -m pip install cibuildwheel==1.6.0
+            python3 -m cibuildwheel --output-dir dist
+
   upload-pypi:
     steps:
       - run:
           name: Upload to pypi
           command: |
             python3 -m pip install twine
-            twine upload --repository testpypi --skip-existing dist/*
+            python3 -m twine upload --skip-existing dist/*
 
 jobs:
   python-check:
@@ -176,17 +184,8 @@ jobs:
     steps:
       - checkout
       - setup_remote_docker
-      - run:
-          name: Build the Linux wheels.
-          command: |
-            python3 -m pip install cibuildwheel==1.6.0
-            python3 -m cibuildwheel --output-dir dist
+      - create-wheel
       - upload-pypi
-#      - run:
-#          name: Upload the Linux wheels.
-#          command: |
-#            python3 -m pip install twine
-#            python3 -m twine upload --skip-existing dist/*
 
   wheels-macos-deploy:
     macos:
@@ -196,17 +195,8 @@ jobs:
       - CIBW_BEFORE_BUILD: "pip3 install cmake setuptools-scm -r requirements.txt && pip3 install --force-reinstall -r requirements-dev.txt"
     steps:
       - checkout
-      - run:
-          name: Build MacOS wheels.
-          command: |
-            python3 -m pip install cibuildwheel==1.6.0
-            python3 -m cibuildwheel --output-dir dist
+      - create-wheel
       - upload-pypi
-#      - run:
-#          name: Upload MacOS wheels.
-#          command: |
-#            pip3 install twine
-#            python3 -m twine upload --skip-existing dist/*
 
 workflows:
   version: 2
