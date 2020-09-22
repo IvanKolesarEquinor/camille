@@ -37,10 +37,6 @@ commands:
             sudo apt-get install -y cmake g++ git 
 
   install-python-deps:
-    parameters:
-      os:
-        type: string
-        default: ""
     steps:
       - run:
           name: Install Python dependencies
@@ -55,15 +51,11 @@ commands:
             python3 -m pip install coverage codacy-coverage
 
   python-build-test:
-    parameters:
-      os:
-        type: string
-        default: ""
     steps:
       - run:
           name: Build & test python
           command: |
-            if [ "<< parameters.os >>" == "mac" ]; then 
+            if [ `uname -s` == "Darwin" ]; then 
               . py_venv/bin/activate
             fi
             python3 setup.py build_ext --inplace
@@ -159,10 +151,8 @@ jobs:
       - checkout
       - bootstrap-macos:
           python-version: << parameters.python-version >>
-      - install-python-deps:
-          os: "mac"
-      - python-build-test:
-          os: "mac"
+      - install-python-deps
+      - python-build-test
   
   sdist-deploy:
     docker:
