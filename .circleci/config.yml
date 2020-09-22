@@ -45,7 +45,7 @@ commands:
       - run:
           name: Install Python dependencies
           command: |
-            if [ "<< parameters.os >>" == "mac" ]; then 
+            if [ `uname -s` == "Darwin" ]; then 
               . py_venv/bin/activate
             fi
             python3 --version
