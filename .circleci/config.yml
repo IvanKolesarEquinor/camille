@@ -180,7 +180,7 @@ jobs:
     environment:
       - CIBW_BUILD: "cp35-manylinux_x86_64 cp36-manylinux_x86_64 cp37-manylinux_x86_64 cp38-manylinux_x86_64"
       - CIBW_BEFORE_ALL: "yum install -y gcc ninja-build"
-      - CIBW_BEFORE_BUILD: "pip install cmake setuptools-scm -r requirements.txt && pip install --force-reinstall -r requirements-dev.txt"
+      - CIBW_BEFORE_BUILD: "pip install cmake setuptools-scm -r requirements.txt && pip install -r requirements-dev.txt"
     steps:
       - checkout
       - setup_remote_docker
@@ -192,7 +192,7 @@ jobs:
       xcode: 11.0.0
     environment:
       - CIBW_BUILD: "cp35-macosx_x86_64 cp36-macosx_x86_64 cp37-macosx_x86_64 cp38-macosx_x86_64"
-      - CIBW_BEFORE_BUILD: "pip3 install cmake setuptools-scm -r requirements.txt && pip3 install --force-reinstall -r requirements-dev.txt"
+      - CIBW_BEFORE_BUILD: "pip3 install cmake setuptools-scm -r requirements.txt && pip3 install -r requirements-dev.txt"
     steps:
       - checkout
       - create-wheel
